@@ -1,5 +1,5 @@
 # checkery
-Play checkers against your friends, enemies, or a bot!
+Play checkers against your friends, enemies, or AI
 
 - Follows the English Draughts version of checkers
 - Bot implemented through a minimax search
