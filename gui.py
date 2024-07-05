@@ -31,7 +31,7 @@ INITIAL_BOARD = [
 ]
 
 
-def get_turn_pieces(t: str) -> (str, str):
+def get_turn_pieces(t: str) -> tuple[str, str]:
     """
     Get the pieces corresponding to the current turn.
 
@@ -47,7 +47,7 @@ def get_turn_pieces(t: str) -> (str, str):
         return 'b', 'B'
 
 
-def draw_grid(s: checkers.State, highlights: list[(int, int)], select: (int, int), dif: list[(int, int)]) -> None:
+def draw_grid(s: checkers.State, highlights: list[(int, int)], select: tuple[int, int], dif: list[(int, int)]) -> None:
     """
     Draw the checkers grid on the screen.
 
@@ -85,7 +85,7 @@ def draw_grid(s: checkers.State, highlights: list[(int, int)], select: (int, int
                 pygame.draw.circle(screen, BLACK, (center_x, center_y), SQUARE_SIZE // 3)
 
 
-def handle_click(pos: (float, float)) -> (int, int):
+def handle_click(pos: tuple[float, float]) -> tuple[int, int]:
     """
     Handle a mouse click and return the corresponding board position.
 
@@ -96,12 +96,12 @@ def handle_click(pos: (float, float)) -> (int, int):
         (int, int): The board position corresponding to the click.
     """
     x, y = pos
-    row, col = y // SQUARE_SIZE, x // SQUARE_SIZE
+    row, col = int(y // SQUARE_SIZE), int(x // SQUARE_SIZE)
     s = (row, col)
     return s
 
 
-def determine_moves(pos: (int, int), s: checkers.State, t: str) -> list[(int, int)]:
+def determine_moves(pos: tuple[int, int], s: checkers.State, t: str) -> list[(int, int)]:
     """
     Determine the possible moves for a given piece.
 
@@ -150,7 +150,7 @@ def determine_moves(pos: (int, int), s: checkers.State, t: str) -> list[(int, in
     return moves
 
 
-def jump_possible(pos: (int, int), s: checkers.State, t: str) -> bool:
+def jump_possible(pos: tuple[int, int], s: checkers.State, t: str) -> bool:
     """
     Determine if a piece can perform a jump.
 
@@ -208,7 +208,7 @@ def draw_finish(s: checkers.State) -> None:
         s (checkers.State): The final game state.
     """
     screen.fill(BLACK)
-    if checkers.utility(s, 'r', 0) == checkers.POS_INF:
+    if s.utility('r', 0) == checkers.POS_INF:
         txt = "Red Wins"
     else:
         txt = "Black Wins"
@@ -249,7 +249,7 @@ def finish(s: checkers.State) -> bool:
                     return True
 
 
-def menu() -> (bool, bool):
+def menu() -> tuple[bool, bool]:
     """
     Display the game menu and get the player's choice.
 
@@ -278,6 +278,7 @@ def run() -> checkers.State:
     Returns:
         checkers.State: The final game state.
     """
+    clock = pygame.time.Clock()
     state = checkers.State(INITIAL_BOARD)
     action = IDLE
     selection = None
@@ -287,8 +288,7 @@ def run() -> checkers.State:
     diffs = []
 
     running = True
-    while running and not checkers.terminal(state, turn):
-
+    while running and not state.terminal(turn):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -316,7 +316,7 @@ def run() -> checkers.State:
                         x_diff = selection[1] - prev_selection[1]
                         if abs(y_diff) == 2:
                             state = checkers.jump(state, prev_selection[1], prev_selection[0], x_diff // 2, y_diff // 2)
-                            status = checkers.promote(state, selection[1], selection[0])
+                            status = state.promote(selection[1], selection[0])
                             if (not jump_possible(selection, state, turn)) or status:
                                 turn = checkers.get_next_turn(turn)
                         else:
@@ -327,13 +327,16 @@ def run() -> checkers.State:
                         selection = None
                         possible_moves = []
                 else:
+                    pieces = state.pieces()
+                    difficulty = 11 - (pieces ** 0.5 // 1)
                     prev_state = state
-                    state = checkers.minimax(state, turn)
+                    state = checkers.minimax(state, turn, difficulty)
                     diffs = prev_state.diff(state)
                     turn = checkers.get_next_turn(turn)
 
         draw_grid(state, possible_moves, selection, diffs)
         pygame.display.flip()
+        clock.tick(15)
     return state
 
 
